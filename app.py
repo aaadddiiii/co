@@ -1,7 +1,7 @@
 from flask import Flask
 from config import Config
 from src.db.model import db, User
-from src.routes import route
+from src.routes import routes
 from werkzeug.security import generate_password_hash
 
 
@@ -28,8 +28,8 @@ with app.app_context():
 
 
 # -------- REGISTER ROUTES --------
-route(app)
+routes(app)
 
 
 if __name__ == "__main__":
-    app.run()
+    app.run(debug=True)

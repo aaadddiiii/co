@@ -1,6 +1,6 @@
-from . import login, register, logout
+from . import login_routes, register_routes, logout_routes
 
-def route(app):
-    login.route(app)
-    register.route(app)
-    logout.route(app)
+def routes(app):
+    login_routes.routes(app)
+    register_routes.routes(app)
+    logout_routes.routes(app)

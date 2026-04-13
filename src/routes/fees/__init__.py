@@ -1,7 +1,7 @@
-from . import admin, student, parent, treasurer
+from . import admin_fee_routes, student_fee_routes, parent_fee_routes, treasurer_fee_routes
 
-def route(app):
-    admin.route(app)
-    treasurer.route(app)
-    student.route(app)
-    parent.route(app)
+def routes(app):
+    admin_fee_routes.routes(app)
+    treasurer_fee_routes.routes(app)
+    student_fee_routes.routes(app)
+    parent_fee_routes.routes(app)

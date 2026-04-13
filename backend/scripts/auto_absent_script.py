@@ -2,9 +2,7 @@ from flask import Flask
 from config import Config
 from src.db.model import db
 from src.services.attendance import mark_absent_teachers
-
-app = Flask(__name__)
-app.config.from_object(Config)
+from app import app
 
 db.init_app(app)
 

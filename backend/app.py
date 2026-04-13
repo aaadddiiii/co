@@ -3,12 +3,14 @@ from config import Config
 from src.db.model import db, User
 from src.routes import routes
 from werkzeug.security import generate_password_hash
+from src.core.error_handler import init_error_handlers
 
 
 app = Flask(__name__)
 app.config.from_object(Config)
 
 db.init_app(app)
+init_error_handlers(app)
 
 # -------- INIT DB + CREATE ADMIN --------
 with app.app_context():

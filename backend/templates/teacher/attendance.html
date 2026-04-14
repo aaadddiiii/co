@@ -1,0 +1,107 @@
+{% extends "layouts/teacher_base.html" %}
+
+{% block title %}Attendance{% endblock %}
+{% block page_title %}Attendance{% endblock %}
+
+{% block content %}
+
+<!-- VIEW HISTORY -->
+<div class="card">
+
+  <h4>Attendance History</h4>
+
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Student</th>
+        <th>Class</th>
+        <th>Date</th>
+        <th>Period</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+
+    <tbody id="history-body"></tbody>
+  </table>
+
+</div>
+
+<!-- MARK ATTENDANCE -->
+<div class="card">
+
+  <h4>Mark Attendance</h4>
+
+  <input id="class_id" placeholder="Class ID">
+  <input id="period" placeholder="Period">
+
+  <textarea id="students_json" placeholder='[{"id":1,"status":"present"}]'></textarea>
+
+  <button onclick="submitAttendance()">Submit</button>
+
+</div>
+
+<script>
+// ================= LOAD HISTORY =================
+async function loadHistory() {
+  const res = await fetch("/attendance/teacher/students", {
+    credentials: "include"
+  });
+
+  const data = await res.json();
+
+  let html = "";
+
+  data.attendance.forEach(a => {
+    html += `
+      <tr>
+        <td>${a.student_id}</td>
+        <td>${a.class_id}</td>
+        <td>${a.date}</td>
+        <td>${a.period}</td>
+        <td>${a.status}</td>
+      </tr>
+    `;
+  });
+
+  document.getElementById("history-body").innerHTML = html;
+}
+
+// ================= SUBMIT =================
+async function submitAttendance() {
+  let students;
+
+  try {
+    students = JSON.parse(document.getElementById("students_json").value);
+  } catch {
+    alert("Invalid JSON");
+    return;
+  }
+
+  const res = await fetch("/attendance/teacher/mark", {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      class_id: class_id.value,
+      period: period.value,
+      students: students
+    })
+  });
+
+  const data = await res.json();
+
+  if (!data.success) {
+    alert(data.error || "Failed");
+    return;
+  }
+
+  alert("Marked");
+  loadHistory();
+}
+
+loadHistory();
+</script>
+
+{% endblock %}

@@ -2,7 +2,7 @@ from flask import session, request, current_app
 from werkzeug.utils import secure_filename
 import os
 import uuid
-import imghdr
+from PIL import Image
 from src.db.model import db, User, Student, Fee, Payment, User
 from src.utils import role_required
 from src.utils.response import error
@@ -110,8 +110,13 @@ def routes(app):
             header = file.read(512)
             file.seek(0)
 
-            if imghdr.what(None, header) not in {"png", "jpeg"}:
-                return error("Invalid image content")
+            try:
+                img = Image.open(file)
+                if img.format.lower() not in ["png", "jpeg", "jpg"]:
+                    return error("Invalid image content")
+                file.seek(0)
+            except:
+                return error("Invalid image file")
 
             filename = f"{uuid.uuid4()}.{ext}"
 

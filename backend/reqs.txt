@@ -2,3 +2,5 @@ Flask
 Flask-SQLAlchemy
 Werkzeug
 requests
+pillow
+flask-cors

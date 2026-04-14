@@ -1,0 +1,108 @@
+{% extends "layouts/student_base.html" %}
+
+{% block title %}Fees{% endblock %}
+{% block page_title %}Fees{% endblock %}
+
+{% block content %}
+
+<div class="card">
+
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Fee ID</th>
+        <th>Total</th>
+        <th>Paid</th>
+        <th>Status</th>
+        <th>Pay</th>
+      </tr>
+    </thead>
+
+    <tbody id="fees-body"></tbody>
+
+  </table>
+
+</div>
+
+<script>
+let currentStudentId = null;
+
+// ================= LOAD FEES =================
+async function loadFees() {
+  const res = await fetch("/fees/student", {
+    credentials: "include"
+  });
+
+  const data = await res.json();
+
+  if (!data.fees) {
+    alert("Failed to load fees");
+    return;
+  }
+
+  let html = "";
+
+  data.fees.forEach(f => {
+    html += `
+      <tr>
+        <td>${f.id}</td>
+        <td>${f.total}</td>
+        <td>${f.paid}</td>
+        <td>${f.status}</td>
+        <td>
+          <input type="number" placeholder="Amount" id="amount-${f.id}">
+          <input type="text" placeholder="Txn ID" id="txn-${f.id}">
+          <input type="file" id="file-${f.id}">
+          <button onclick="pay(${f.id})">Submit</button>
+        </td>
+      </tr>
+    `;
+  });
+
+  document.getElementById("fees-body").innerHTML = html;
+}
+
+// ================= PAY =================
+async function pay(feeId) {
+  const amount = document.getElementById(`amount-${feeId}`).value;
+  const txn = document.getElementById(`txn-${feeId}`).value;
+  const file = document.getElementById(`file-${feeId}`).files[0];
+
+  if (!amount || !txn) {
+    alert("Amount and txn required");
+    return;
+  }
+
+  const form = new FormData();
+  form.append("fee_id", feeId);
+  form.append("amount", amount);
+  form.append("txn_id", txn);
+
+  // student role → backend auto-detects student
+  // so NO need to send student_id here
+
+  if (file) {
+    form.append("screenshot", file);
+  }
+
+  const res = await fetch("/fees/pay", {
+    method: "POST",
+    body: form,
+    credentials: "include"
+  });
+
+  const data = await res.json();
+
+  if (!data.success) {
+    alert(data.error || "Payment failed");
+    return;
+  }
+
+  alert("Payment submitted");
+  loadFees();
+}
+
+loadFees();
+</script>
+
+{% endblock %}

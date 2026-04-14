@@ -1,4 +1,4 @@
-from . import attendance, schedule, auth, fees, salary
+from . import attendance, schedule, auth, fees, salary, analytics, user, common, page
 
 def routes(app):
     attendance.routes(app)
@@ -6,3 +6,7 @@ def routes(app):
     auth.routes(app)
     fees.routes(app)
     salary.routes(app)
+    analytics.routes(app)
+    user.routes(app)
+    common.routes(app)
+    page.routes(app)

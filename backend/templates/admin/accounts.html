@@ -1,0 +1,123 @@
+{% extends "layouts/admin_base.html" %}
+
+{% block title %}Accounts{% endblock %}
+{% block page_title %}Accounts{% endblock %}
+
+{% block content %}
+
+<!-- SUMMARY -->
+<div class="card">
+  <h4>Summary</h4>
+  <div id="summary"></div>
+</div>
+
+<!-- ADD ENTRY -->
+<div class="card">
+
+  <h4>Add Entry</h4>
+
+  <div class="form-row">
+    <select id="type">
+      <option value="">Type</option>
+      <option value="credit">Credit</option>
+      <option value="debit">Debit</option>
+    </select>
+
+    <input id="amount" placeholder="Amount">
+    <input id="description" placeholder="Description">
+
+    <button onclick="addEntry()">Add</button>
+  </div>
+
+</div>
+
+<!-- LOG TABLE -->
+<div class="card">
+
+  <h4>Transactions</h4>
+
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Amount</th>
+        <th>Description</th>
+        <th>Date</th>
+      </tr>
+    </thead>
+
+    <tbody id="account-body"></tbody>
+  </table>
+
+</div>
+
+<script>
+// ================= SUMMARY =================
+async function loadSummary() {
+  const res = await AccountAPI.getSummary();
+
+  if (!res.success) return;
+
+  document.getElementById("summary").innerHTML = `
+    <div>Total Income: ${res.total_income}</div>
+    <div>Total Expense: ${res.total_expense}</div>
+    <div>Balance: ${res.balance}</div>
+  `;
+}
+
+// ================= TABLE =================
+async function loadAccounts() {
+  const res = await AccountAPI.getAll();
+
+  if (!res.success) return;
+
+  let html = "";
+
+  res.data.forEach(a => {
+    html += `
+      <tr>
+        <td>${a.type}</td>
+        <td>${a.amount}</td>
+        <td>${a.description || "-"}</td>
+        <td>${a.date}</td>
+      </tr>
+    `;
+  });
+
+  document.getElementById("account-body").innerHTML = html;
+}
+
+// ================= ADD =================
+async function addEntry() {
+  if (!type.value || !amount.value) {
+    alert("Fill required fields");
+    return;
+  }
+
+  const f = new FormData();
+  f.append("type", type.value);
+  f.append("amount", amount.value);
+  f.append("description", description.value);
+
+  const res = await AccountAPI.add(f);
+
+  if (!res.success) {
+    alert(res.error || "Failed");
+    return;
+  }
+
+  type.value = "";
+  amount.value = "";
+  description.value = "";
+
+  loadAccounts();
+  loadSummary();
+}
+
+// ================= INIT =================
+loadSummary();
+loadAccounts();
+
+</script>
+
+{% endblock %}

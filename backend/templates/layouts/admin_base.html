@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{% block title %}Admin{% endblock %}</title>
+
+  <link rel="stylesheet" href="/static/css/style.css">
+
+  <script src="/static/js/api.js"></script>
+  <script src="/static/js/auth.js"></script>
+</head>
+
+<body>
+
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <h2 class="logo">Admin</h2>
+
+    <nav>
+      <a href="/admin/dashboard">Dashboard</a>
+      <a href="/admin/users">Users</a>
+      <a href="/admin/schedule">Schedule</a>
+      <a href="/admin/attendance">Attendance</a>
+      <a href="/admin/accounts">Accounts</a>
+    </nav>
+
+    <button onclick="logout()" class="logout-btn">
+      Logout
+    </button>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <h3>{% block page_title %}{% endblock %}</h3>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content">
+      {% block content %}{% endblock %}
+    </div>
+
+  </main>
+
+</div>
+
+</body>
+</html>

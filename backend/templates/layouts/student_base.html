@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>{% block title %}Student{% endblock %}</title>
+
+  <link rel="stylesheet" href="/static/css/style.css">
+
+  <script src="/static/js/api.js"></script>
+  <script src="/static/js/auth.js"></script>
+</head>
+
+<body>
+
+<div class="app">
+
+  <aside class="sidebar">
+    <h2>Student</h2>
+
+    <nav>
+      <a href="/student/dashboard">Dashboard</a>
+      <a href="/student/attendance">Attendance</a>
+      <a href="/student/fees">Fees</a>
+    </nav>
+
+    <button onclick="logout()">Logout</button>
+  </aside>
+
+  <main class="main">
+
+    <div class="topbar">
+      <h3>{% block page_title %}{% endblock %}</h3>
+    </div>
+
+    <div class="content">
+      {% block content %}{% endblock %}
+    </div>
+
+  </main>
+
+</div>
+
+</body>
+</html>

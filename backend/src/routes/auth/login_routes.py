@@ -1,20 +1,25 @@
+from flask import request, session
 from src.utils.validators import require_fields
 from src.utils.response import success, error
+from src.db.model import User
+from werkzeug.security import check_password_hash
 
-@app.route("/login", methods=["POST"])
-def login():
-    data = request.form
 
-    err = require_fields(data, ["email", "password"])
-    if err:
-        return error(err)
+def routes(app):
+    @app.route("/login", methods=["POST"])
+    def login():
+        data = request.form
 
-    user = User.query.filter_by(email=data["email"]).first()
+        err = require_fields(data, ["email", "password"])
+        if err:
+            return error(err)
 
-    if not user or not check_password_hash(user.password, data["password"]):
-        return error("Invalid credentials", 401)
+        user = User.query.filter_by(email=data["email"]).first()
 
-    session["user_id"] = user.id
-    session["role"] = user.role
+        if not user or not check_password_hash(user.password, data["password"]):
+            return error("Invalid credentials", 401)
 
-    return success(message="Logged in")
+        session["user_id"] = user.id
+        session["role"] = user.role
+
+        return success(message="Logged in")

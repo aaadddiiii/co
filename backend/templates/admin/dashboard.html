@@ -1,0 +1,24 @@
+{% extends "layouts/admin_base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+
+<div id="summary"></div>
+
+<script>
+async function load() {
+  const data = await AccountAPI.getSummary();
+
+  document.getElementById("summary").innerHTML = `
+    <div>Total Income: ${data.total_income}</div>
+    <div>Total Expense: ${data.total_expense}</div>
+    <div>Balance: ${data.balance}</div>
+  `;
+}
+
+load();
+</script>
+
+{% endblock %}

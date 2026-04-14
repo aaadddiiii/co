@@ -1,0 +1,54 @@
+{% extends "layouts/teacher_base.html" %}
+
+{% block title %}Schedule{% endblock %}
+{% block page_title %}My Schedule{% endblock %}
+
+{% block content %}
+
+<div class="card">
+
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Day</th>
+        <th>Period</th>
+        <th>Subject</th>
+        <th>Class</th>
+      </tr>
+    </thead>
+
+    <tbody id="schedule-body"></tbody>
+
+  </table>
+
+</div>
+
+<script>
+async function loadSchedule() {
+  const res = await ScheduleAPI.getAll(); // assume backend filters
+
+  if (!res.success) {
+    alert("Failed to load schedule");
+    return;
+  }
+
+  let html = "";
+
+  res.data.forEach(s => {
+    html += `
+      <tr>
+        <td>${s.day}</td>
+        <td>${s.period}</td>
+        <td>${s.subject}</td>
+        <td>${s.class_name || s.class_id}</td>
+      </tr>
+    `;
+  });
+
+  document.getElementById("schedule-body").innerHTML = html;
+}
+
+loadSchedule();
+</script>
+
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends "layouts/student_base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+
+<div class="card">
+  <h4>Attendance Summary</h4>
+  <div id="attendance-summary"></div>
+</div>
+
+<div class="card">
+  <h4>Fees Status</h4>
+  <div id="fees-summary"></div>
+</div>
+
+<script>
+async function load() {
+  const att = await AttendanceAPI.getStudent();
+  const fees = await FeeAPI.getStudent();
+
+  // attendance
+  if (att.success) {
+    const total = att.data.length;
+    const present = att.data.filter(a => a.status === "present").length;
+
+    document.getElementById("attendance-summary").innerText =
+      `Present: ${present} / ${total}`;
+  }
+
+  // fees
+  if (fees.success) {
+    let total = 0;
+    let paid = 0;
+
+    fees.data.forEach(f => {
+      total += f.total;
+      paid += f.paid;
+    });
+
+    document.getElementById("fees-summary").innerText =
+      `Paid: ${paid} / ${total}`;
+  }
+}
+
+load();
+</script>
+
+{% endblock %}

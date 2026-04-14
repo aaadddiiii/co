@@ -1,0 +1,122 @@
+{% extends "layouts/admin_base.html" %}
+
+{% block title %}Users{% endblock %}
+{% block page_title %}Users{% endblock %}
+
+{% block content %}
+
+<!-- CREATE USER -->
+<div class="card">
+
+  <h4>Add User</h4>
+
+  <div class="form-row">
+    <input id="name" placeholder="Name">
+    <input id="email" placeholder="Email">
+
+    <select id="role">
+      <option value="">Role</option>
+      <option value="admin">Admin</option>
+      <option value="teacher">Teacher</option>
+      <option value="student">Student</option>
+      <option value="parent">Parent</option>
+      <option value="treasurer">Treasurer</option>
+    </select>
+
+    <button onclick="createUser()">Add</button>
+  </div>
+
+</div>
+
+<!-- USERS TABLE -->
+<div class="card">
+
+  <h4>All Users</h4>
+
+  <table class="table">
+
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Role</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+
+    <tbody id="users-body"></tbody>
+
+  </table>
+
+</div>
+
+<script>
+async function loadUsers() {
+  const res = await UserAPI.getAll();
+
+  if (!res.success) {
+    alert("Failed to load users");
+    return;
+  }
+
+  let html = "";
+
+  res.data.forEach(u => {
+    html += `
+      <tr>
+        <td>${u.name}</td>
+        <td>${u.email}</td>
+        <td>${u.role}</td>
+        <td>
+          <button onclick="deleteUser(${u.id})">Delete</button>
+        </td>
+      </tr>
+    `;
+  });
+
+  document.getElementById("users-body").innerHTML = html;
+}
+
+async function createUser() {
+  if (!name.value || !email.value || !role.value) {
+    alert("All fields required");
+    return;
+  }
+
+  const f = new FormData();
+  f.append("name", name.value);
+  f.append("email", email.value);
+  f.append("role", role.value);
+
+  const res = await UserAPI.create(f);
+
+  if (!res.success) {
+    alert(res.error || "Failed");
+    return;
+  }
+
+  // reset fields
+  name.value = "";
+  email.value = "";
+  role.value = "";
+
+  loadUsers();
+}
+
+async function deleteUser(id) {
+  if (!confirm("Delete this user?")) return;
+
+  const res = await UserAPI.delete(id);
+
+  if (!res.success) {
+    alert("Delete failed");
+    return;
+  }
+
+  loadUsers();
+}
+
+loadUsers();
+</script>
+
+{% endblock %}

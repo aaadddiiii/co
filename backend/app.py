@@ -4,9 +4,13 @@ from src.db.model import db, User
 from src.routes import routes
 from werkzeug.security import generate_password_hash
 from src.core.error_handler import init_error_handlers
+from flask_cors import CORS
+
 
 
 app = Flask(__name__)
+CORS(app, supports_credentials=True)
+
 app.config.from_object(Config)
 
 db.init_app(app)
@@ -20,7 +24,7 @@ with app.app_context():
     if not User.query.filter_by(role="admin").first():
         admin = User(
             name="Admin",
-            email="admin@mail.com",
+            email="admin",
             password=generate_password_hash("123"),
             role="admin"
         )

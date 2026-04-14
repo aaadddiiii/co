@@ -1,0 +1,76 @@
+{% extends "layouts/teacher_base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+
+<!-- TODAY CLASSES -->
+<div class="card">
+  <h4>Today's Classes</h4>
+  <div id="today-classes"></div>
+</div>
+
+<!-- ATTENDANCE STATUS -->
+<div class="card">
+  <h4>Attendance Status</h4>
+  <div id="attendance-status"></div>
+</div>
+
+<script>
+
+// get today's day
+function getToday() {
+  return new Date().toLocaleString("en-US", { weekday: "long" });
+}
+
+// ================= LOAD =================
+async function loadDashboard() {
+  const today = getToday();
+
+  const schedRes = await ScheduleAPI.getAll();
+  const attRes = await AttendanceAPI.getTeacherSelf();
+
+  if (!schedRes.success) return;
+
+  // filter today's classes
+  const todayClasses = schedRes.data.filter(s => s.day === today);
+
+  // render classes
+  let classHTML = "";
+
+  todayClasses.forEach(c => {
+    classHTML += `
+      <div>
+        Period ${c.period} - ${c.subject} (Class ${c.class_name || c.class_id})
+      </div>
+    `;
+  });
+
+  document.getElementById("today-classes").innerHTML =
+    classHTML || "<div>No classes today</div>";
+
+  // attendance status
+  let statusHTML = "";
+
+  todayClasses.forEach(c => {
+    const marked = attRes.success && attRes.data.some(a =>
+      a.period === c.period
+    );
+
+    statusHTML += `
+      <div>
+        Period ${c.period} → ${marked ? "Marked" : "Not Marked"}
+      </div>
+    `;
+  });
+
+  document.getElementById("attendance-status").innerHTML =
+    statusHTML || "<div>No data</div>";
+}
+
+loadDashboard();
+
+</script>
+
+{% endblock %}

@@ -91,22 +91,3 @@ def routes(app):
 
         return success(message="User created")
 
-
-
-    # -------- GET USERS --------
-    @app.route("/users", methods=["GET"])
-    @role_required("admin")
-    def get_users():
-
-        users = User.query.all()
-
-        data = [
-            {
-                "id": u.id,
-                "name": u.name,
-                "email": u.email,
-                "role": u.role
-            } for u in users
-        ]
-
-        return success(data=data)

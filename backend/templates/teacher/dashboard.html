@@ -1,75 +1,69 @@
-{% extends "layouts/teacher_base.html" %}
-
-{% block title %}Dashboard{% endblock %}
-{% block page_title %}Dashboard{% endblock %}
+{% extends "base.html" %}
 
 {% block content %}
 
-<!-- TODAY CLASSES -->
-<div class="card">
-  <h4>Today's Classes</h4>
-  <div id="today-classes"></div>
-</div>
+<h1>Teacher Dashboard</h1>
 
-<!-- ATTENDANCE STATUS -->
-<div class="card">
-  <h4>Attendance Status</h4>
-  <div id="attendance-status"></div>
-</div>
+<h3>Today’s Classes</h3>
+<div id="today"></div>
+
+<hr>
+
+<h3>Attendance Summary</h3>
+<div id="summary"></div>
+
+<hr>
+
+<h3>Recent Attendance</h3>
+<div id="recent"></div>
 
 <script>
 
-// get today's day
 function getToday() {
-  return new Date().toLocaleString("en-US", { weekday: "long" });
+    const days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+    return days[new Date().getDay()];
 }
 
-// ================= LOAD =================
-async function loadDashboard() {
-  const today = getToday();
+(async () => {
+    const schedule = await API("/schedule/teacher");
+    const attendance = await API("/attendance/teacher/self");
 
-  const schedRes = await ScheduleAPI.getAll();
-  const attRes = await AttendanceAPI.getTeacherSelf();
+    // ---- TODAY CLASSES ----
+    const today = getToday();
 
-  if (!schedRes.success) return;
+    const todayClasses = schedule.schedule.filter(s => s.day === today);
 
-  // filter today's classes
-  const todayClasses = schedRes.data.filter(s => s.day === today);
+    document.getElementById("today").innerHTML =
+        todayClasses.length
+        ? todayClasses.map(s => `
+            <div>
+                P${s.period} | ${s.subject} | Class ${s.class_id}
+            </div>
+        `).join("")
+        : "No classes today";
 
-  // render classes
-  let classHTML = "";
+    // ---- SUMMARY ----
+    const total = attendance.attendance.length;
+    const present = attendance.attendance.filter(a => a.status === "present").length;
+    const absent = total - present;
 
-  todayClasses.forEach(c => {
-    classHTML += `
-      <div>
-        Period ${c.period} - ${c.subject} (Class ${c.class_name || c.class_id})
-      </div>
+    document.getElementById("summary").innerHTML = `
+        <p>Total: ${total}</p>
+        <p>Present: ${present}</p>
+        <p>Absent: ${absent}</p>
     `;
-  });
 
-  document.getElementById("today-classes").innerHTML =
-    classHTML || "<div>No classes today</div>";
+    // ---- RECENT ----
+    const recent = attendance.attendance.slice(-5).reverse();
 
-  // attendance status
-  let statusHTML = "";
+    document.getElementById("recent").innerHTML =
+        recent.map(r => `
+            <div>
+                ${r.date} | P${r.period} | ${r.status}
+            </div>
+        `).join("");
 
-  todayClasses.forEach(c => {
-    const marked = attRes.success && attRes.data.some(a =>
-      a.period === c.period
-    );
-
-    statusHTML += `
-      <div>
-        Period ${c.period} → ${marked ? "Marked" : "Not Marked"}
-      </div>
-    `;
-  });
-
-  document.getElementById("attendance-status").innerHTML =
-    statusHTML || "<div>No data</div>";
-}
-
-loadDashboard();
+})();
 
 </script>
 

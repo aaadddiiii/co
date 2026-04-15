@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>Analytics</h1>
+
+<h3>Overview</h3>
+<div id="overview"></div>
+
+<hr>
+
+<h3>Defaulters</h3>
+<div id="defaulters"></div>
+
+<script>
+async function load() {
+    const o = await API("/analytics/overview");
+    const d = await API("/analytics/defaulters");
+
+    document.getElementById("overview").innerHTML = `
+        Students: ${o.students} <br>
+        Teachers: ${o.teachers} <br>
+        Fees: ${o.total_fees} <br>
+        Salary: ${o.total_salary}
+    `;
+
+    document.getElementById("defaulters").innerHTML =
+        d.data.map(f => `
+            <div>
+                Student ${f.student_id} |
+                Due: ${f.due} |
+                ${f.period_start} → ${f.period_end}
+            </div>
+        `).join("");
+}
+
+load();
+</script>
+
+{% endblock %}

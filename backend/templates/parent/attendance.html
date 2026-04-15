@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>Child Attendance</h1>
+
+<select id="student"></select>
+<select id="period"></select>
+
+<button onclick="load()">Load</button>
+
+<br><br>
+
+<div id="summary"></div>
+<hr>
+<div id="list"></div>
+
+<script>
+
+let allData = [];
+
+(async () => {
+    const res = await API("/attendance/parent");
+    allData = res.data;
+
+    document.getElementById("student").innerHTML =
+        allData.map(s => `<option value="${s.student_id}">Student ${s.student_id}</option>`).join("");
+
+    // period options
+    const periods = new Set();
+    allData.forEach(s => s.attendance.forEach(a => periods.add(a.period)));
+
+    document.getElementById("period").innerHTML =
+        `<option value="">All</option>` +
+        [...periods].map(p => `<option value="${p}">P${p}</option>`).join("");
+
+    load();
+})();
+
+function load() {
+    const student = document.getElementById("student").value;
+    const period = document.getElementById("period").value;
+
+    const data = allData.find(s => s.student_id == student)?.attendance || [];
+
+    let records = data;
+    if (period) records = records.filter(r => r.period == period);
+
+    const present = records.filter(r => r.status === "present").length;
+
+    document.getElementById("summary").innerHTML =
+        `Present: ${present}/${records.length}`;
+
+    document.getElementById("list").innerHTML =
+        records.map(r => `
+            <div>
+                ${r.date} | P${r.period} | ${r.status}
+            </div>
+        `).join("") || "No data";
+}
+
+</script>
+
+{% endblock %}

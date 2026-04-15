@@ -1,9 +1,9 @@
 from flask import request
 from werkzeug.security import generate_password_hash
 from src.db.model import db, User, Teacher, Student
-from src.utils import can_create_user, role_required
-from src.utils.validators import require_fields, validate_email, validate_positive, validate_int
-from src.utils.response import success, error
+from src.utils import can_create_user, role_required, success, error, require_fields, validate_email, validate_positive, validate_int
+
+
 
 
 def routes(app):

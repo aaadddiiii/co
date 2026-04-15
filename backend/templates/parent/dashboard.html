@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>Parent Dashboard</h1>
+
+<div id="children"></div>
+
+<script>
+(async () => {
+    const fees = await API("/fees/parent");
+    const attendance = await API("/attendance/parent");
+
+    const feeMap = {};
+    fees.data.forEach(f => feeMap[f.student_id] = f.fees);
+
+    const attMap = {};
+    attendance.data.forEach(a => attMap[a.student_id] = a.attendance);
+
+    document.getElementById("children").innerHTML =
+        Object.keys(feeMap).map(id => {
+            const f = feeMap[id] || [];
+            const a = attMap[id] || [];
+
+            const due = f.filter(x => x.status !== "paid").length;
+            const present = a.filter(x => x.status === "present").length;
+
+            return `
+                <div style="border:1px solid #ccc; padding:15px; margin:10px;">
+                    <h3>Student ${id}</h3>
+                    <p>Fees Pending: ${due}</p>
+                    <p>Attendance: ${present}/${a.length}</p>
+
+                    <a href="/parent/fees?student=${id}">Fees</a> |
+                    <a href="/parent/attendance?student=${id}">Attendance</a>
+                </div>
+            `;
+        }).join("");
+})();
+</script>
+
+{% endblock %}

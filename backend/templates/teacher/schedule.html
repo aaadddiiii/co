@@ -1,54 +1,62 @@
-{% extends "layouts/teacher_base.html" %}
-
-{% block title %}Schedule{% endblock %}
-{% block page_title %}My Schedule{% endblock %}
+{% extends "base.html" %}
 
 {% block content %}
 
-<div class="card">
+<h1>Weekly Timetable</h1>
 
-  <table class="table">
+<table border="1" cellpadding="10">
     <thead>
-      <tr>
-        <th>Day</th>
-        <th>Period</th>
-        <th>Subject</th>
-        <th>Class</th>
-      </tr>
+        <tr>
+            <th>Period</th>
+            <th>Monday</th>
+            <th>Tuesday</th>
+            <th>Wednesday</th>
+            <th>Thursday</th>
+            <th>Friday</th>
+            <th>Saturday</th>
+            <th>Sunday</th>
+        </tr>
     </thead>
-
-    <tbody id="schedule-body"></tbody>
-
-  </table>
-
-</div>
+    <tbody id="table"></tbody>
+</table>
 
 <script>
-async function loadSchedule() {
-  const res = await ScheduleAPI.getAll(); // assume backend filters
 
-  if (!res.success) {
-    alert("Failed to load schedule");
-    return;
-  }
+const days = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
 
-  let html = "";
+(async () => {
+    const data = await API("/schedule/teacher");
+    const schedule = data.schedule;
 
-  res.data.forEach(s => {
-    html += `
-      <tr>
-        <td>${s.day}</td>
-        <td>${s.period}</td>
-        <td>${s.subject}</td>
-        <td>${s.class_name || s.class_id}</td>
-      </tr>
-    `;
-  });
+    // find max period
+    const maxPeriod = Math.max(...schedule.map(s => s.period));
 
-  document.getElementById("schedule-body").innerHTML = html;
-}
+    // map: period → day → subject
+    const map = {};
+    schedule.forEach(s => {
+        if (!map[s.period]) map[s.period] = {};
+        map[s.period][s.day] = s;
+    });
 
-loadSchedule();
+    let html = "";
+
+    for (let p = 1; p <= maxPeriod; p++) {
+        html += `<tr><td>P${p}</td>`;
+
+        days.forEach(day => {
+            const s = map[p]?.[day];
+
+            html += `<td>${
+                s ? `${s.subject}<br>Class ${s.class_id}` : "-"
+            }</td>`;
+        });
+
+        html += `</tr>`;
+    }
+
+    document.getElementById("table").innerHTML = html;
+})();
+
 </script>
 
 {% endblock %}

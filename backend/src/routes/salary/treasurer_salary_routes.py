@@ -1,7 +1,5 @@
 from src.db.model import TeacherPayment, db
-from src.utils import role_required
-from src.utils.response import success, error
-from src.utils.request_utils import get_int, get_float, get_str
+from src.utils import role_required, success, error, get_int, get_float, get_str
 
 
 
@@ -12,7 +10,7 @@ def routes(app):
     def get_all_salaries():
         data = TeacherPayment.query.order_by(TeacherPayment.year.desc()).all()
 
-        return {
+        return success(data={
             "salaries": [
                 {
                     "id": p.id,
@@ -22,7 +20,7 @@ def routes(app):
                     "status": p.status
                 } for p in data
             ]
-        }
+        })
 
 
     @app.route("/salary/pay", methods=["POST"])

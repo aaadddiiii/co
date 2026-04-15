@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>Payment Detail</h1>
+
+<div id="data"></div>
+
+<hr>
+
+<div id="actions"></div>
+
+<script>
+
+const id = window.location.pathname.split("/").pop();
+
+(async () => {
+    const p = await API(`/fees/payment/${id}`);
+
+    let html = `
+        <h3>Payment Info</h3>
+        <p>ID: ${p.id}</p>
+        <p>Student: ${p.student_id}</p>
+        <p>Amount: ${p.amount}</p>
+        <p>Transaction ID: ${p.txn_id}</p>
+        <p>Status: ${p.status}</p>
+    `;
+
+    if (p.screenshot) {
+        html += `
+            <h3>Screenshot</h3>
+            <img src="/uploads/${p.screenshot}" width="300"/>
+        `;
+    }
+
+    if (p.fee) {
+        html += `
+            <h3>Fee Info</h3>
+            <p>Total: ${p.fee.total}</p>
+            <p>Paid: ${p.fee.paid}</p>
+            <p>Status: ${p.fee.status}</p>
+            <p>Remaining: ${p.fee.total - p.fee.paid}</p>
+        `;
+    }
+
+    document.getElementById("data").innerHTML = html;
+
+    // ACTION
+    if (p.status === "pending") {
+        document.getElementById("actions").innerHTML =
+            `<button onclick="verify()">Verify Payment</button>`;
+    }
+})();
+
+async function verify() {
+    const form = new FormData();
+    form.append("payment_id", id);
+
+    await API("/fees/verify", "POST", form);
+
+    alert("Verified");
+    location.reload();
+}
+
+</script>
+
+{% endblock %}

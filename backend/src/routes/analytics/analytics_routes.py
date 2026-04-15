@@ -1,7 +1,7 @@
 from flask import request
 from sqlalchemy import func, extract
 from src.db.model import db, Student, Teacher, Fee, TeacherPayment, AccountLog
-from src.utils import role_required
+from src.utils import role_required, success, error
 
 
 def routes(app):
@@ -13,12 +13,12 @@ def routes(app):
         total_fees = db.session.query(func.sum(Fee.total)).scalar() or 0
         total_salary = db.session.query(func.sum(TeacherPayment.amount)).scalar() or 0
 
-        return {
+        return success(data={
             "students": Student.query.count(),
             "teachers": Teacher.query.count(),
             "total_fees": total_fees,
             "total_salary": total_salary
-        }
+        })
 
 
     # -------- MONTHLY TREND --------
@@ -48,7 +48,7 @@ def routes(app):
             else:
                 result[month]["expense"] = amount
 
-        return {"data": result}
+        return success(data={"data": result})
 
 
     # -------- DEFAULTERS --------
@@ -58,7 +58,7 @@ def routes(app):
 
         fees = Fee.query.filter(Fee.status != "paid").all()
 
-        return {
+        return success(data={
             "data": [
                 {
                     "student_id": f.student_id,
@@ -67,7 +67,7 @@ def routes(app):
                     "period_end": str(f.period_end)
                 } for f in fees
             ]
-        }
+        })
 
 
     # -------- DATE RANGE REPORT --------
@@ -94,11 +94,11 @@ def routes(app):
         income = sum(l.amount for l in logs if l.type == "credit")
         expense = sum(l.amount for l in logs if l.type == "debit")
 
-        return {
+        return success(data={
             "income": income,
             "expense": expense,
             "balance": income - expense
-        }
+        })
 
 
     # -------- TOP EARNERS (teachers) --------
@@ -113,9 +113,9 @@ def routes(app):
          .order_by(func.sum(TeacherPayment.amount).desc())\
          .limit(5).all()
 
-        return {
+        return success(data={
             "data": [
                 {"teacher_id": t_id, "total_salary": total}
                 for t_id, total in data
             ]
-        }
+        })

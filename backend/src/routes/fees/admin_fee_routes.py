@@ -1,7 +1,6 @@
 from flask import request
 from src.db.model import db, Fee
-from src.utils import role_required
-from src.utils.request_utils import get_int, get_float, get_str
+from src.utils import role_required, get_int, get_float, get_str, success, error
 
 
 def routes(app):
@@ -36,7 +35,7 @@ def routes(app):
     def all_fees():
         data = Fee.query.all()
 
-        return {
+        return success(data={
             "fees": [
                 {
                     "id": f.id,
@@ -46,4 +45,4 @@ def routes(app):
                     "status": f.status
                 } for f in data
             ]
-        }
+        })

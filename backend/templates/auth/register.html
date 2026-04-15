@@ -1,80 +1,90 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>Register User</title>
-
-  <link rel="stylesheet" href="/static/css/style.css">
-
-  <script src="/static/js/api.js"></script>
-  <script src="/static/js/auth.js"></script>
+    <title>Register User</title>
 </head>
-
 <body>
 
-<div class="login-container">
+<h2>Register User</h2>
 
-  <div class="login-card">
+<form id="registerForm">
 
-    <h2 class="login-title">Create User</h2>
+    <input name="name" placeholder="Name" required />
+    <br><br>
 
-    <form onsubmit="event.preventDefault(); registerUser();" class="login-form">
+    <input name="email" placeholder="Email" required />
+    <br><br>
 
-      <div class="form-group">
-        <label>Name</label>
-        <input id="name" placeholder="Full name" required>
-      </div>
+    <input name="password" type="password" placeholder="Password" required />
+    <br><br>
 
-      <div class="form-group">
-        <label>Email</label>
-        <input id="email" type="email" placeholder="Email" required>
-      </div>
+    <select name="role" id="role" required>
+        <option value="">Select Role</option>
+        <option value="teacher">Teacher</option>
+        <option value="student">Student</option>
+        <option value="parent">Parent</option>
+    </select>
 
-      <div class="form-group">
-        <label>Password</label>
-        <input id="password" type="password" placeholder="Password" required>
-      </div>
+    <br><br>
 
-      <div class="form-group">
-        <label>Role</label>
-        <select id="role" required>
-          <option value="">Select role</option>
-          <option value="admin">Admin</option>
-          <option value="teacher">Teacher</option>
-          <option value="student">Student</option>
-          <option value="parent">Parent</option>
-          <option value="treasurer">Treasurer</option>
-        </select>
-      </div>
+    <!-- Teacher fields -->
+    <div id="teacherFields" style="display:none;">
+        <input name="type" placeholder="Type (temporary/permanent)" />
+        <br><br>
+        <input name="pay_rate" placeholder="Pay Rate" />
+        <br><br>
+    </div>
 
-      <button type="submit" class="login-btn">
-        Create User
-      </button>
+    <!-- Student fields -->
+    <div id="studentFields" style="display:none;">
+        <input name="parent_id" placeholder="Parent ID (optional)" />
+        <br><br>
+        <input name="class_id" placeholder="Class ID" />
+        <br><br>
+    </div>
 
-    </form>
-
-  </div>
-
-</div>
+    <button type="submit">Create User</button>
+</form>
 
 <script>
-async function registerUser() {
-  const form = new FormData();
+const roleSelect = document.getElementById("role");
+const teacherFields = document.getElementById("teacherFields");
+const studentFields = document.getElementById("studentFields");
 
-  form.append("name", document.getElementById("name").value);
-  form.append("email", document.getElementById("email").value);
-  form.append("password", document.getElementById("password").value);
-  form.append("role", document.getElementById("role").value);
+roleSelect.onchange = () => {
+    teacherFields.style.display = "none";
+    studentFields.style.display = "none";
 
-  const res = await UserAPI.create(form);
+    if (roleSelect.value === "teacher") {
+        teacherFields.style.display = "block";
+    }
 
-  if (!res.success) {
-    alert(res.error || "Failed");
-    return;
-  }
+    if (roleSelect.value === "student") {
+        studentFields.style.display = "block";
+    }
+};
 
-  alert("User created");
-}
+document.getElementById("registerForm").onsubmit = async (e) => {
+    e.preventDefault();
+
+    const form = new FormData(e.target);
+
+    const res = await fetch("/register", {
+        method: "POST",
+        body: form,
+        credentials: "include"
+    });
+
+    const data = await res.json();
+
+    if (!data.success) {
+        alert(data.error);
+        return;
+    }
+
+    alert("User created");
+    e.target.reset();
+};
 </script>
 
 </body>

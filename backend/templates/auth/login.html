@@ -1,59 +1,44 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>Login</title>
-
-  <!-- CSS (add later) -->
-  <link rel="stylesheet" href="/static/css/style.css">
-
-  <!-- JS -->
-  <script src="/static/js/api.js"></script>
-  <script src="/static/js/auth.js"></script>
+    <title>Login</title>
 </head>
-
 <body>
 
-<div class="login-container">
+<h2>Login</h2>
 
-  <div class="login-card">
+<form id="loginForm">
+    <input name="email" placeholder="Email" required />
+    <br><br>
 
-    <h2 class="login-title">Login</h2>
+    <input name="password" type="password" placeholder="Password" required />
+    <br><br>
 
-    <form onsubmit="event.preventDefault(); login();" class="login-form">
+    <button type="submit">Login</button>
+</form>
 
-      <div class="form-group">
-        <label>Email</label>
-        <input 
-          id="email" 
-          placeholder="Enter your email"
-          required
-        >
-      </div>
+<script>
+document.getElementById("loginForm").onsubmit = async (e) => {
+    e.preventDefault();
 
-      <div class="form-group">
-        <label>Password</label>
-        <input 
-          id="password" 
-          type="password" 
-          placeholder="Enter your password"
-          required
-        >
-      </div>
+    const form = new FormData(e.target);
 
-      <button type="submit" class="login-btn">
-        Login
-      </button>
+    const res = await fetch("/login", {
+        method: "POST",
+        body: form,
+        credentials: "include"
+    });
 
-    </form>
+    const data = await res.json();
 
-    <p class="login-footer">
-      Contact admin if you don’t have access
-    </p>
+    if (!data.success) {
+        alert(data.error);
+        return;
+    }
 
-  </div>
-
-</div>
+    location.reload(); // backend handles redirect
+};
+</script>
 
 </body>
 </html>

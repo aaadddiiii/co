@@ -1,50 +1,37 @@
-{% extends "layouts/student_base.html" %}
-
-{% block title %}Dashboard{% endblock %}
-{% block page_title %}Dashboard{% endblock %}
+{% extends "base.html" %}
 
 {% block content %}
 
-<div class="card">
-  <h4>Attendance Summary</h4>
-  <div id="attendance-summary"></div>
-</div>
+<h1>Dashboard</h1>
 
-<div class="card">
-  <h4>Fees Status</h4>
-  <div id="fees-summary"></div>
+<div style="display:flex; gap:20px; flex-wrap:wrap;">
+
+    <div style="border:1px solid #ccc; padding:15px; width:200px;">
+        <h3>Fees</h3>
+        <p id="fees"></p>
+    </div>
+
+    <div style="border:1px solid #ccc; padding:15px; width:200px;">
+        <h3>Attendance</h3>
+        <p id="attendance"></p>
+    </div>
+
 </div>
 
 <script>
-async function load() {
-  const att = await AttendanceAPI.getStudent();
-  const fees = await FeeAPI.getStudent();
+(async () => {
+    const fees = await API("/fees/student");
+    const attendance = await API("/attendance/student");
 
-  // attendance
-  if (att.success) {
-    const total = att.data.length;
-    const present = att.data.filter(a => a.status === "present").length;
+    const due = fees.fees.filter(f => f.status !== "paid").length;
+    document.getElementById("fees").innerText = `${due} pending`;
 
-    document.getElementById("attendance-summary").innerText =
-      `Present: ${present} / ${total}`;
-  }
+    const total = attendance.attendance.length;
+    const present = attendance.attendance.filter(a => a.status === "present").length;
 
-  // fees
-  if (fees.success) {
-    let total = 0;
-    let paid = 0;
-
-    fees.data.forEach(f => {
-      total += f.total;
-      paid += f.paid;
-    });
-
-    document.getElementById("fees-summary").innerText =
-      `Paid: ${paid} / ${total}`;
-  }
-}
-
-load();
+    document.getElementById("attendance").innerText =
+        `${present}/${total} present`;
+})();
 </script>
 
 {% endblock %}

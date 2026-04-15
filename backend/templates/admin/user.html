@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>User Detail</h1>
+
+<div id="data"></div>
+
+<script>
+const id = window.location.pathname.split("/").pop();
+
+(async () => {
+    const u = await API(`/users/${id}`);
+
+    let html = `
+        <p>Name: ${u.name}</p>
+        <p>Email: ${u.email}</p>
+        <p>Role: ${u.role}</p>
+    `;
+
+    if (u.teacher) {
+        html += `
+            <h3>Teacher</h3>
+            <p>Type: ${u.teacher.type}</p>
+            <p>Pay: ${u.teacher.pay_rate}</p>
+        `;
+    }
+
+    if (u.student) {
+        html += `
+            <h3>Student</h3>
+            <p>Class: ${u.student.class_id}</p>
+            <p>Parent: ${u.student.parent_id}</p>
+        `;
+    }
+
+    if (u.children) {
+        html += `<h3>Children</h3>`;
+        html += u.children.map(c => `
+            <div>Student ${c.id} (Class ${c.class_id})</div>
+        `).join("");
+    }
+
+    document.getElementById("data").innerHTML = html;
+})();
+</script>
+
+{% endblock %}

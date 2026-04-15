@@ -1,172 +1,225 @@
-{% extends "layouts/admin_base.html" %}
-
-{% block title %}Schedule{% endblock %}
-{% block page_title %}Schedule{% endblock %}
+{% extends "base.html" %}
 
 {% block content %}
 
-<!-- CREATE -->
+<h1>Schedule</h1>
+
+<!-- ================= FILTER ================= -->
 <div class="card">
+    <h3>Filter</h3>
 
-    <h4>Create Schedule</h4>
+    <select id="filter_class"></select>
+    <select id="filter_teacher"></select>
 
-    <div class="form-row">
+    <button onclick="load()">Apply</button>
+</div>
 
-        <select id="day">
-            <option value="">Day</option>
+<hr>
+
+<!-- ================= GRID ================= -->
+<h3>Weekly Schedule</h3>
+
+<table>
+    <thead>
+        <tr>
+            <th>P</th>
+            <th>Mon</th>
+            <th>Tue</th>
+            <th>Wed</th>
+            <th>Thu</th>
+            <th>Fri</th>
+            <th>Sat</th>
+            <th>Sun</th>
+        </tr>
+    </thead>
+    <tbody id="table"></tbody>
+</table>
+
+<hr>
+
+<!-- ================= CREATE ================= -->
+<div class="card">
+    <h3>Create Schedule</h3>
+
+    <form id="form">
+
+        <select name="day" required>
             <option>Monday</option>
             <option>Tuesday</option>
             <option>Wednesday</option>
             <option>Thursday</option>
             <option>Friday</option>
             <option>Saturday</option>
+            <option>Sunday</option>
         </select>
 
-        <input id="period" placeholder="Period">
+        <input name="period" type="number" placeholder="Period" required />
 
-        <input id="subject" placeholder="Subject">
+        <input name="subject" placeholder="Subject" required />
 
-        <select id="teacher_id"></select>
+        <!-- NEW -->
+        <input name="start_time" id="start_time" placeholder="HH:MM" required />
+        <input name="end_time" id="end_time" placeholder="HH:MM" required />
 
-        <select id="class_id"></select>
+        <select name="teacher_id" id="teacher" required></select>
+        <select name="class_id" id="class" required></select>
 
-        <button onclick="createSchedule()">Add</button>
-
-    </div>
-
+        <button>Create</button>
+    </form>
 </div>
 
-<!-- TABLE -->
-<div class="card">
-
-    <h4>Schedule</h4>
-
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Day</th>
-                <th>Period</th>
-                <th>Subject</th>
-                <th>Teacher</th>
-                <th>Class</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-
-        <tbody id="schedule-body"></tbody>
-
-    </table>
-
-</div>
 
 <script>
-    // ================= LOAD DROPDOWNS =================
-    async function loadTeachers() {
-        const res = await request("/teachers");
 
-        if (!res.success) return;
+    const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
-        let html = `<option value="">Teacher</option>`;
+    let teachers = [];
+    let classes = [];
+    let schedule = [];
 
-        res.data.forEach(t => {
-            html += `<option value="${t.id}">${t.name}</option>`;
-        });
+    // LOAD INITIAL DATA
+    (async () => {
+        teachers = await API("/teachers");
+        classes = await API("/classes");
 
-        teacher_id.innerHTML = html;
+        // populate dropdowns
+        document.getElementById("teacher").innerHTML =
+            teachers.map(t => `<option value="${t.id}">${t.name}</option>`).join("");
+
+        document.getElementById("class").innerHTML =
+            classes.map(c => `<option value="${c.id}">${c.name}</option>`).join("");
+
+        // filters
+        document.getElementById("filter_teacher").innerHTML =
+            `<option value="">All Teachers</option>` +
+            teachers.map(t => `<option value="${t.id}">${t.name}</option>`).join("");
+
+        document.getElementById("filter_class").innerHTML =
+            `<option value="">All Classes</option>` +
+            classes.map(c => `<option value="${c.id}">${c.name}</option>`).join("");
+
+        load();
+    })();
+
+    // CREATE
+    document.getElementById("form").onsubmit = async (e) => {
+        e.preventDefault();
+
+        await API("/schedule/create", "POST", new FormData(e.target));
+
+        e.target.reset();
+        load();
+    };
+
+    // LOAD + FILTER
+    async function load() {
+        const data = await API("/schedule/all");
+        schedule = data;
+
+        const t = document.getElementById("filter_teacher").value;
+        const c = document.getElementById("filter_class").value;
+
+        let filtered = schedule;
+
+        if (t) filtered = filtered.filter(s => s.teacher_id == t);
+        if (c) filtered = filtered.filter(s => s.class_id == c);
+
+        render(filtered);
     }
 
-    async function loadClasses() {
-        const res = await request("/classes");
+    // RENDER GRID
+    function render(data) {
+        const table = document.getElementById("table");
 
-        if (!res.success) return;
+        if (!data || !data.length) {
+            table.innerHTML = "<tr><td colspan='8'>No schedule</td></tr>";
+            return;
+        }
 
-        let html = `<option value="">Class</option>`;
+        // get only used periods
+        const periods = [...new Set(data.map(s => s.period))]
+            .sort((a, b) => a - b);
 
-        res.data.forEach(c => {
-            html += `<option value="${c.id}">${c.name}</option>`;
+        // map → period → day → schedule
+        const map = {};
+        data.forEach(s => {
+            if (!map[s.period]) map[s.period] = {};
+            map[s.period][s.day] = s;
         });
-
-        class_id.innerHTML = html;
-    }
-
-    // ================= LOAD TABLE =================
-    async function loadSchedule() {
-        const res = await ScheduleAPI.getAll();
-
-        if (!res.success) return;
 
         let html = "";
 
-        res.data.forEach(s => {
-            html += `
-      <tr>
-        <td>${s.day}</td>
-        <td>${s.period}</td>
-        <td>${s.subject}</td>
-        <td>${s.teacher_name || s.teacher_id}</td>
-        <td>${s.class_name || s.class_id}</td>
-        <td>
-          <button onclick="deleteSchedule(${s.id})">Delete</button>
-        </td>
-      </tr>
-    `;
+        periods.forEach(p => {
+            html += `<tr><td>P${p}</td>`;
+
+            days.forEach(d => {
+                const s = map[p]?.[d];
+
+                if (s) {
+                    html += `
+                    <td>
+                        <b>${s.subject}</b><br>
+                        T:${s.teacher_id} | C:${s.class_id}<br>
+                        <button onclick="del(${s.id})">X</button>
+                    </td>
+                `;
+                } else {
+                    html += `<td>-</td>`;
+                }
+            });
+
+            html += `</tr>`;
         });
 
-        el("schedule-body").innerHTML = html;
+        table.innerHTML = html;
+    }
+    
+
+    // DELETE
+    async function del(id) {
+        if (!confirm("Delete?")) return;
+
+        const form = new FormData();
+        form.append("id", id);
+
+        await API("/schedule/delete", "POST", form);
+        load();
     }
 
-    // ================= CREATE =================
-    async function createSchedule() {
-        if (!day.value || !period.value || !subject.value || !teacher_id.value || !class_id.value) {
-            alert("Fill all fields");
-            return;
+    // ================= AUTO TIME =================
+
+    const timeMap = {
+        1: ["10:00", "11:00"],
+        2: ["11:00", "12:00"],
+        3: ["12:00", "13:00"],
+        4: ["14:00", "15:00"],
+        5: ["15:00", "16:00"]
+    };
+
+    const periodInput = document.querySelector("input[name='period']");
+    const start = document.getElementById("start_time");
+    const end = document.getElementById("end_time");
+
+    let manualOverride = false;
+
+    // detect manual typing
+    start.addEventListener("input", () => manualOverride = true);
+    end.addEventListener("input", () => manualOverride = true);
+
+    // auto fill ONLY if user hasn't touched time
+    periodInput.addEventListener("input", () => {
+        if (manualOverride) return;
+
+        const p = parseInt(periodInput.value);
+
+        if (timeMap[p]) {
+            start.value = timeMap[p][0];
+            end.value = timeMap[p][1];
+        } else {
+            start.value = "";
+            end.value = "";
         }
-
-        const f = new FormData();
-
-        f.append("day", day.value);
-        f.append("period", period.value);
-        f.append("subject", subject.value);
-        f.append("teacher_id", teacher_id.value);
-        f.append("class_id", class_id.value);
-        f.append("start_time", "10:00");
-        f.append("end_time", "11:00");
-
-        const res = await ScheduleAPI.create(f);
-
-        if (!res.success) {
-            alert(res.error || "Failed");
-            return;
-        }
-
-        // reset
-        day.value = "";
-        period.value = "";
-        subject.value = "";
-        teacher_id.value = "";
-        class_id.value = "";
-
-        loadSchedule();
-    }
-
-    // ================= DELETE =================
-    async function deleteSchedule(id) {
-        if (!confirm("Delete this schedule?")) return;
-
-        const res = await ScheduleAPI.delete(id);
-
-        if (!res.success) {
-            alert("Delete failed");
-            return;
-        }
-
-        loadSchedule();
-    }
-
-    // ================= INIT =================
-    loadTeachers();
-    loadClasses();
-    loadSchedule();
+    });
 
 </script>
 

@@ -1,123 +1,50 @@
-{% extends "layouts/admin_base.html" %}
-
-{% block title %}Accounts{% endblock %}
-{% block page_title %}Accounts{% endblock %}
+{% extends "base.html" %}
 
 {% block content %}
 
-<!-- SUMMARY -->
-<div class="card">
-  <h4>Summary</h4>
-  <div id="summary"></div>
-</div>
+<h1>Accounts</h1>
 
-<!-- ADD ENTRY -->
-<div class="card">
+<h3>Add Entry</h3>
 
-  <h4>Add Entry</h4>
-
-  <div class="form-row">
-    <select id="type">
-      <option value="">Type</option>
-      <option value="credit">Credit</option>
-      <option value="debit">Debit</option>
+<form id="form">
+    <select name="type">
+        <option value="credit">Credit</option>
+        <option value="debit">Debit</option>
     </select>
 
-    <input id="amount" placeholder="Amount">
-    <input id="description" placeholder="Description">
+    <input name="amount" placeholder="Amount" required />
+    <input name="description" placeholder="Description" />
+    <button>Add</button>
+</form>
 
-    <button onclick="addEntry()">Add</button>
-  </div>
+<hr>
 
-</div>
-
-<!-- LOG TABLE -->
-<div class="card">
-
-  <h4>Transactions</h4>
-
-  <table class="table">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Amount</th>
-        <th>Description</th>
-        <th>Date</th>
-      </tr>
-    </thead>
-
-    <tbody id="account-body"></tbody>
-  </table>
-
-</div>
+<h3>All Transactions</h3>
+<div id="list"></div>
 
 <script>
-// ================= SUMMARY =================
-async function loadSummary() {
-  const res = await AccountAPI.getSummary();
+document.getElementById("form").onsubmit = async (e) => {
+    e.preventDefault();
 
-  if (!res.success) return;
+    const form = new FormData(e.target);
+    await API("/accounts/add", "POST", form);
 
-  document.getElementById("summary").innerHTML = `
-    <div>Total Income: ${res.total_income}</div>
-    <div>Total Expense: ${res.total_expense}</div>
-    <div>Balance: ${res.balance}</div>
-  `;
+    e.target.reset();
+    load();
+};
+
+async function load() {
+    const data = await API("/accounts/all");
+
+    document.getElementById("list").innerHTML =
+        data.data.map(l => `
+            <div>
+                ${l.type} | ${l.amount} | ${l.description || ""} | ${l.date}
+            </div>
+        `).join("");
 }
 
-// ================= TABLE =================
-async function loadAccounts() {
-  const res = await AccountAPI.getAll();
-
-  if (!res.success) return;
-
-  let html = "";
-
-  res.data.forEach(a => {
-    html += `
-      <tr>
-        <td>${a.type}</td>
-        <td>${a.amount}</td>
-        <td>${a.description || "-"}</td>
-        <td>${a.date}</td>
-      </tr>
-    `;
-  });
-
-  document.getElementById("account-body").innerHTML = html;
-}
-
-// ================= ADD =================
-async function addEntry() {
-  if (!type.value || !amount.value) {
-    alert("Fill required fields");
-    return;
-  }
-
-  const f = new FormData();
-  f.append("type", type.value);
-  f.append("amount", amount.value);
-  f.append("description", description.value);
-
-  const res = await AccountAPI.add(f);
-
-  if (!res.success) {
-    alert(res.error || "Failed");
-    return;
-  }
-
-  type.value = "";
-  amount.value = "";
-  description.value = "";
-
-  loadAccounts();
-  loadSummary();
-}
-
-// ================= INIT =================
-loadSummary();
-loadAccounts();
-
+load();
 </script>
 
 {% endblock %}

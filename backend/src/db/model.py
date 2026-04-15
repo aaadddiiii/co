@@ -15,17 +15,17 @@ class User(db.Model):
 # -------- TEACHERS --------
 class Teacher(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), unique=True)
     type = db.Column(db.String(20))
     pay_rate = db.Column(db.Float)
 
-    user = db.relationship("User", backref="teacher", uselist=False)
+    user = db.relationship("User", backref="teacher_profile", uselist=False)
 
 
 # -------- STUDENTS --------
 class Student(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), unique=True)
     parent_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     class_id = db.Column(db.Integer, db.ForeignKey('class.id'))
     status = db.Column(db.String(20))
@@ -33,7 +33,7 @@ class Student(db.Model):
     reactive_date = db.Column(db.Date, nullable=True)
     leave_date = db.Column(db.Date, nullable=True)
 
-    user = db.relationship("User", foreign_keys=[user_id], backref="student", uselist=False)
+    user = db.relationship("User", foreign_keys=[user_id], backref="student_profile", uselist=False)
     parent = db.relationship("User", foreign_keys=[parent_id], backref="children")
     class_ = db.relationship("Class", backref="students")
 

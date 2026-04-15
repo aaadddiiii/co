@@ -1,17 +1,16 @@
 from flask import request
 from src.db.model import db, User, Payment, Fee, AccountLog
-from src.utils import role_required
-from src.utils.request_utils import get_int, get_float, get_str
+from src.utils import role_required, error, success, get_int, get_float, get_str
 
 
 def routes(app):
 
     @app.route("/fees/payments")
-    @role_required("treasurer")
+    @role_required("admin", "treasurer")
     def view_payments():
         data = Payment.query.all()
 
-        return {
+        return success(data={
             "payments": [
                 {
                     "id": p.id,
@@ -23,6 +22,8 @@ def routes(app):
                 } for p in data
             ]
         }
+        
+        )
 
 
     @app.route("/fees/verify", methods=["POST"])
@@ -62,3 +63,29 @@ def routes(app):
         db.session.commit()
 
         return success(message="Verified")
+
+
+    @app.route("/fees/payment/<int:payment_id>")
+    @role_required("treasurer")
+    def get_payment_detail(payment_id):
+        payment = Payment.query.get(payment_id)
+
+        if not payment:
+            return error("Payment not found", 404)
+
+        fee = payment.fee
+
+        return success(data={
+            "id": payment.id,
+            "student_id": payment.student_id,
+            "amount": payment.amount,
+            "txn_id": payment.txn_id,
+            "screenshot": payment.screenshot,
+            "status": payment.status,
+            "fee": {
+                "id": fee.id,
+                "total": fee.total,
+                "paid": fee.paid,
+                "status": fee.status
+            } if fee else None
+        })

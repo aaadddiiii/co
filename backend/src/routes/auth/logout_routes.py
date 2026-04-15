@@ -1,8 +1,13 @@
-from flask import session
-
+from flask import session, request, redirect
 
 def routes(app):
-    @app.route("/logout")
+
+    @app.route("/logout", methods=["GET", "POST"])
     def logout():
-        session.clear()
-        return success(message="Logged out")
+
+        if request.method == "POST":
+            session.clear()
+            return redirect("/")   # or /login
+
+        # GET request
+        return redirect("/")

@@ -30,17 +30,29 @@ def routes(app):
     def admin_pages(path):
         return render_template(f"admin/{path}.html")
 
+
+
     @app.route("/teacher/<path:path>")
     def teacher_pages(path):
         return render_template(f"teacher/{path}.html")
+
+
 
     @app.route("/student/<path:path>")
     def student_pages(path):
         return render_template(f"student/{path}.html")
 
+
+
     @app.route("/parent/<path:path>")
     def parent_pages(path):
         return render_template(f"parent/{path}.html")
+
+
+
+    @app.route("/treasurer/payment/<int:id>")
+    def treasurer_payment(id):
+        return render_template("treasurer/payment.html")
 
     @app.route("/treasurer/<path:path>")
     def treasurer_pages(path):

@@ -1,155 +1,52 @@
-// ================= BASE =================
-async function request(url, method = "GET", body = null, isForm = false) {
-  const options = {
-    method,
-    credentials: "include",
-    headers: {}
-  };
+const API = async (url, method = "GET", body = null, json = false) => {
+    const options = {
+        method,
+        credentials: "include"
+    };
 
-  if (body) {
-    if (isForm) {
-      options.body = body;
-    } else {
-      options.headers["Content-Type"] = "application/json";
-      options.body = JSON.stringify(body);
+    if (body) {
+        if (json) {
+            options.headers = {
+                "Content-Type": "application/json"
+            };
+            options.body = JSON.stringify(body);
+        } else {
+            options.body = body;
+        }
     }
-  }
 
-  const res = await fetch(url, options);
-  return res.json();
-}
+    let res;
 
-// ================= AUTH =================
-const AuthAPI = {
-  login: (formData) => request("/login", "POST", formData, true),
-  logout: () => request("/logout", "POST")
-};
+    try {
+        res = await fetch(url, options);
+    } catch {
+        alert("Network error. Check connection.");
+        throw new Error("Network error");
+    }
 
-// ================= USERS =================
-const UserAPI = {
-  getAll: () => request("/users"),
+    // redirect (session expired etc.)
+    if (res.redirected) {
+        window.location.href = res.url;
+        return;
+    }
 
-  create: (formData) =>
-    request("/users/update", "POST", formData, true),
+    // handle empty response
+    if (res.status === 204) return;
 
-  delete: (id) => {
-    const f = new FormData();
-    f.append("id", id);
-    return request("/users/delete", "POST", f, true);
-  }
-};
+    let data;
 
-// ================= SCHEDULE =================
-const ScheduleAPI = {
-  getAll: () => request("/schedule/all"),
+    try {
+        data = await res.json();
+    } catch {
+        alert("Server returned invalid response.");
+        throw new Error("Invalid JSON response");
+    }
 
-  create: (formData) =>
-    request("/schedule/create", "POST", formData, true),
+    if (!res.ok || !data.success) {
+        const msg = data?.error || data?.message || "Request failed";
+        alert(msg);
+        throw new Error(msg);
+    }
 
-  update: (formData) =>
-    request("/schedule/update", "POST", formData, true),
-
-  delete: (id) => {
-    const f = new FormData();
-    f.append("id", id);
-    return request("/schedule/delete", "POST", f, true);
-  }
-};
-
-// ================= ATTENDANCE =================
-const AttendanceAPI = {
-  getStudents: (class_id, period) =>
-    request(`/attendance/teacher/students?class_id=${class_id}&period=${period}`),
-
-  mark: (data) =>
-    request("/attendance/teacher/mark", "POST", data),
-
-  getTeacherSelf: () =>
-    request("/attendance/teacher/self"),
-
-  getStudent: () =>
-    request("/attendance/student"),
-
-  getParent: () =>
-    request("/attendance/parent"),
-
-  getAdminStudents: () =>
-    request("/attendance/admin/students"),
-
-  getAdminTeachers: () =>
-    request("/attendance/admin/teachers"),
-
-  update: (formData) =>
-    request("/attendance/admin/update", "POST", formData, true),
-
-  delete: (id) => {
-    const f = new FormData();
-    f.append("id", id);
-    return request("/attendance/admin/delete", "POST", f, true);
-  }
-};
-
-// ================= FEES =================
-const FeeAPI = {
-  getStudent: () => request("/fees/student"),
-  getParent: () => request("/fees/parent"),
-  getAll: () => request("/fees/all"),
-
-  create: (formData) =>
-    request("/fees/create", "POST", formData, true),
-
-  pay: (formData) =>
-    request("/fees/pay", "POST", formData, true)
-};
-
-// ================= PAYMENTS =================
-const PaymentAPI = {
-  getAll: () => request("/fees/payments"),
-
-  verify: (id) => {
-    const f = new FormData();
-    f.append("payment_id", id);
-    return request("/fees/verify", "POST", f, true);
-  }
-};
-
-// ================= SALARY =================
-const SalaryAPI = {
-  getAll: () => request("/salary/all"),
-  getAdmin: () => request("/salary/admin"),
-
-  approve: (id) => {
-    const f = new FormData();
-    f.append("payment_id", id);
-    return request("/salary/approve", "POST", f, true);
-  },
-
-  pay: (id) => {
-    const f = new FormData();
-    f.append("payment_id", id);
-    return request("/salary/pay", "POST", f, true);
-  }
-};
-
-// ================= ACCOUNTS =================
-const AccountAPI = {
-  getAll: () => request("/accounts/all"),
-  getSummary: () => request("/accounts/summary"),
-
-  getMonthly: (month, year) =>
-    request(`/accounts/monthly?month=${month}&year=${year}`),
-
-  add: (formData) =>
-    request("/accounts/add", "POST", formData, true)
-};
-
-// ================= ANALYTICS =================
-const AnalyticsAPI = {
-  getOverview: () => request("/analytics/overview"),
-  getMonthlyTrend: () => request("/analytics/monthly-trend"),
-  getDefaulters: () => request("/analytics/defaulters"),
-  getTopTeachers: () => request("/analytics/top-teachers"),
-
-  getDateRange: (start, end) =>
-    request(`/analytics/date-range?start=${start}&end=${end}`)
+    return data.data;
 };

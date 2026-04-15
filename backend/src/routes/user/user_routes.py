@@ -1,8 +1,6 @@
 from flask import request
-from src.db.model import db, User
-from src.utils import role_required
-from src.utils.response import success, error
-from src.utils.request_utils import get_int, get_str
+from src.db.model import db, User, Teacher, Class
+from src.utils import role_required, success, error, get_int, get_str
 
 
 def routes(app):
@@ -23,6 +21,35 @@ def routes(app):
         ]
 
         return success(data=data)
+
+
+    
+    @app.route("/teachers")
+    @role_required("admin")
+    def get_teachers():
+        teachers = Teacher.query.all()
+
+        return success(data=[
+            {
+                "id": t.id,
+                "name": t.user.name
+            } for t in teachers
+        ])
+
+
+
+
+    @app.route("/classes")
+    @role_required("admin")
+    def get_classes():
+        classes = Class.query.all()
+
+        return success(data=[
+            {"id": c.id, "name": c.name}
+            for c in classes
+        ])
+
+
 
     # -------- UPDATE USER --------
     @app.route("/users/update", methods=["POST"])
@@ -85,3 +112,50 @@ def routes(app):
             return error("Database error", 500)
 
         return success(message="User deleted")
+
+
+
+
+
+    @app.route("/users/<int:user_id>")
+    @role_required("admin")
+    def get_user_detail(user_id):
+        user = User.query.get(user_id)
+
+        if not user:
+            return error("User not found", 404)
+
+        data = {
+            "id": user.id,
+            "name": user.name,
+            "email": user.email,
+            "role": user.role
+        }
+
+        # teacher details
+        if user.role == "teacher" and user.teacher:
+            data["teacher"] = {
+                "id": user.teacher.id,
+                "type": user.teacher.type,
+                "pay_rate": user.teacher.pay_rate
+            }
+
+        # student details
+        if user.role == "student" and user.student_profile:
+            data["student"] = {
+                "id": user.student_profile.id,
+                "class_id": user.student_profile.class_id,
+                "parent_id": user.student_profile.parent_id,
+                "status": user.student_profile.status
+            }
+
+        # parent details
+        if user.role == "parent":
+            data["children"] = [
+                {
+                    "id": s.id,
+                    "class_id": s.class_id
+                } for s in user.children
+            ]
+
+        return success(data=data)

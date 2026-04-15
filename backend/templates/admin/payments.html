@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>Payments</h1>
+
+<div id="list"></div>
+
+<script>
+async function load() {
+    const data = await API("/fees/payments");
+
+    document.getElementById("list").innerHTML =
+        data.payments.map(p => `
+            <div>
+                ID: ${p.id} |
+                Student: ${p.student_id} |
+                Amount: ${p.amount} |
+                Status: ${p.status}
+            </div>
+        `).join("");
+}
+
+load();
+</script>
+
+{% endblock %}

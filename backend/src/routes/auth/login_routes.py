@@ -1,6 +1,5 @@
 from flask import request, session
-from src.utils.validators import require_fields
-from src.utils.response import success, error
+from src.utils import success, error, require_fields
 from src.db.model import User
 from werkzeug.security import check_password_hash
 

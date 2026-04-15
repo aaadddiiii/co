@@ -4,6 +4,8 @@
 
 <h1>Fees</h1>
 
+<select id="student"></select>
+
 <div id="fees"></div>
 
 <hr>
@@ -15,25 +17,45 @@
     <input name="amount" placeholder="Amount" required />
     <input name="txn_id" placeholder="Transaction ID" required />
     <input type="file" name="screenshot" required />
+    <input name="student_id" id="student_id" hidden />
     <button>Submit</button>
 </form>
 
 <script>
 
-async function load() {
-    const data = await API("/fees/student");
+let allData = [];
+
+(async () => {
+    const res = await API("/fees/parent");
+    allData = res.data;
+
+    document.getElementById("student").innerHTML =
+        allData.map(s => `<option value="${s.student_id}">Student ${s.student_id}</option>`).join("");
+
+    document.getElementById("student").onchange = load;
+
+    load();
+})();
+
+function load() {
+    const student = document.getElementById("student").value;
+
+    document.getElementById("student_id").value = student;
+
+    const data = allData.find(s => s.student_id == student)?.fees || [];
 
     document.getElementById("fees").innerHTML =
-        data.fees.map(f => `
+        data.map(f => `
             <div style="border:1px solid #ccc; padding:10px; margin:5px;">
-                <b>ID:</b> ${f.id} <br>
-                <b>Total:</b> ${f.total} <br>
-                <b>Paid:</b> ${f.paid} <br>
-                <b>Status:</b> ${f.status}
+                ID: ${f.id} |
+                Total: ${f.total} |
+                Paid: ${f.paid} |
+                Status: ${f.status}
             </div>
         `).join("");
 }
 
+// SUBMIT
 document.getElementById("form").onsubmit = async (e) => {
     e.preventDefault();
 
@@ -42,11 +64,8 @@ document.getElementById("form").onsubmit = async (e) => {
     await API("/fees/pay", "POST", form);
 
     alert("Payment submitted");
-    e.target.reset();
     load();
 };
-
-load();
 
 </script>
 

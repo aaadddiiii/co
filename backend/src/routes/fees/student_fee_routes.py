@@ -4,9 +4,7 @@ import os
 import uuid
 from PIL import Image
 from src.db.model import db, User, Student, Fee, Payment, User
-from src.utils import role_required
-from src.utils.response import error
-from src.utils.request_utils import get_int, get_float, get_str
+from src.utils import role_required, get_int, get_float, get_str, error, success
 
 
 
@@ -24,13 +22,14 @@ def routes(app):
         user_id = session.get("user_id")
 
         user = User.query.get(user_id)
-        student = user.student
+        # student = user.student_profile
+        student = Student.query.filter_by(user_id=user.id).first()
         if not student:
             return error("Unauthorized", 401)
 
-        fees = student.fees
+        fees = Fee.query.filter_by(student_id=student.id).all()
 
-        return {
+        return success(data={
             "fees": [
                 {
                     "id": f.id,
@@ -39,7 +38,9 @@ def routes(app):
                     "status": f.status
                 } for f in fees
             ]
-        }
+        })
+
+
 
 
     # -------- PAY (student + parent) --------

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>Treasurer Dashboard</h1>
+
+<div id="stats"></div>
+
+<script>
+(async () => {
+    const payments = await API("/fees/payments");
+
+    const total = payments.payments.length;
+    const pending = payments.payments.filter(p => p.status === "pending").length;
+    const verified = payments.payments.filter(p => p.status === "verified").length;
+
+    document.getElementById("stats").innerHTML = `
+        <p>Total Payments: ${total}</p>
+        <p>Pending: ${pending}</p>
+        <p>Verified: ${verified}</p>
+    `;
+})();
+</script>
+
+{% endblock %}

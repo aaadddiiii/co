@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>Fees</h1>
+
+<h3>Create Fee</h3>
+
+<form id="form">
+    <input name="student_id" placeholder="Student ID" required />
+    <input name="total" placeholder="Amount" required />
+    <button>Create</button>
+</form>
+
+<hr>
+
+<h3>All Fees</h3>
+<div id="list"></div>
+
+<script>
+document.getElementById("form").onsubmit = async (e) => {
+    e.preventDefault();
+
+    const form = new FormData(e.target);
+    await API("/fees/create", "POST", form);
+
+    e.target.reset();
+    load();
+};
+
+async function load() {
+    const data = await API("/fees/all");
+
+    document.getElementById("list").innerHTML =
+        data.fees.map(f => `
+            <div>
+                Student ${f.student_id} |
+                Total: ${f.total} |
+                Paid: ${f.paid} |
+                Status: ${f.status}
+            </div>
+        `).join("");
+}
+
+load();
+</script>
+
+{% endblock %}

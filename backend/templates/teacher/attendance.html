@@ -1,107 +1,137 @@
-{% extends "layouts/teacher_base.html" %}
-
-{% block title %}Attendance{% endblock %}
-{% block page_title %}Attendance{% endblock %}
+{% extends "base.html" %}
 
 {% block content %}
 
-<!-- VIEW HISTORY -->
+<h1>Attendance</h1>
+
+<!-- ================= SELF ATTENDANCE ================= -->
 <div class="card">
+    <h3>My Attendance</h3>
 
-  <h4>Attendance History</h4>
+    <select id="self_schedule"></select>
 
-  <table class="table">
-    <thead>
-      <tr>
-        <th>Student</th>
-        <th>Class</th>
-        <th>Date</th>
-        <th>Period</th>
-        <th>Status</th>
-      </tr>
-    </thead>
+    <select id="self_status">
+        <option value="present">Present</option>
+        <option value="absent">Absent</option>
+    </select>
 
-    <tbody id="history-body"></tbody>
-  </table>
-
+    <button onclick="markSelf()">Mark</button>
 </div>
 
-<!-- MARK ATTENDANCE -->
-<div class="card">
+<hr>
 
-  <h4>Mark Attendance</h4>
+<!-- ================= STUDENT ATTENDANCE ================= -->
+<h3>Mark Students</h3>
 
-  <input id="class_id" placeholder="Class ID">
-  <input id="period" placeholder="Period">
+<select id="schedule"></select>
+<button onclick="loadStudents()">Load Students</button>
 
-  <textarea id="students_json" placeholder='[{"id":1,"status":"present"}]'></textarea>
+<br><br>
 
-  <button onclick="submitAttendance()">Submit</button>
+<div id="students"></div>
 
-</div>
+<button onclick="submit()">Submit</button>
 
 <script>
-// ================= LOAD HISTORY =================
-async function loadHistory() {
-  const res = await fetch("/attendance/teacher/students", {
-    credentials: "include"
-  });
 
-  const data = await res.json();
+let selected = {};
+let studentIds = [];
+let teacherSchedule = [];
 
-  let html = "";
+// ================= LOAD SCHEDULE =================
+(async () => {
+    const data = await API("/schedule/teacher");
 
-  data.attendance.forEach(a => {
-    html += `
-      <tr>
-        <td>${a.student_id}</td>
-        <td>${a.class_id}</td>
-        <td>${a.date}</td>
-        <td>${a.period}</td>
-        <td>${a.status}</td>
-      </tr>
-    `;
-  });
+    teacherSchedule = data.schedule;
 
-  document.getElementById("history-body").innerHTML = html;
+    const options = teacherSchedule.map(s => `
+        <option value="${s.class_id}_${s.period}">
+            ${s.day} | P${s.period} | Class ${s.class_id}
+        </option>
+    `).join("");
+
+    // both dropdowns use same data
+    document.getElementById("schedule").innerHTML = options;
+    document.getElementById("self_schedule").innerHTML = options;
+})();
+
+// ================= SELF ATTENDANCE =================
+async function markSelf() {
+
+    const val = document.getElementById("self_schedule").value;
+    if (!val) return alert("Select schedule");
+
+    const [class_id, period] = val.split("_").map(Number);
+    const status = document.getElementById("self_status").value;
+
+    await API("/attendance/teacher/self", "POST", {
+        class_id,
+        period,
+        status
+    }, true);
+
+    alert("Attendance marked");
 }
 
-// ================= SUBMIT =================
-async function submitAttendance() {
-  let students;
+// ================= LOAD STUDENTS =================
+async function loadStudents() {
 
-  try {
-    students = JSON.parse(document.getElementById("students_json").value);
-  } catch {
-    alert("Invalid JSON");
-    return;
-  }
+    const val = document.getElementById("schedule").value;
+    if (!val) return alert("Select schedule");
 
-  const res = await fetch("/attendance/teacher/mark", {
-    method: "POST",
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      class_id: class_id.value,
-      period: period.value,
-      students: students
-    })
-  });
+    const [class_id, period] = val.split("_").map(Number);
+    selected = { class_id, period };
 
-  const data = await res.json();
+    const res = await API("/attendance/teacher/students");
 
-  if (!data.success) {
-    alert(data.error || "Failed");
-    return;
-  }
+    const filtered = res.attendance.filter(r => r.class_id == class_id);
 
-  alert("Marked");
-  loadHistory();
+    const seen = {};
+    studentIds = [];
+
+    filtered.forEach(s => {
+        if (!seen[s.student_id]) {
+            seen[s.student_id] = true;
+            studentIds.push(s.student_id);
+        }
+    });
+
+    if (!studentIds.length) {
+        document.getElementById("students").innerHTML = "No students found";
+        return;
+    }
+
+    document.getElementById("students").innerHTML =
+        studentIds.map(id => `
+            <div style="margin-bottom:6px;">
+                Student ${id}
+                <select id="s_${id}">
+                    <option value="present">Present</option>
+                    <option value="absent">Absent</option>
+                </select>
+            </div>
+        `).join("");
 }
 
-loadHistory();
+// ================= SUBMIT STUDENT ATTENDANCE =================
+async function submit() {
+
+    if (!selected.class_id) return alert("Load students first");
+
+    const students = studentIds.map(id => ({
+        id,
+        status: document.getElementById(`s_${id}`).value
+    }));
+
+    await API("/attendance/teacher/mark", "POST", {
+        class_id: selected.class_id,
+        period: selected.period,
+        students
+    }, true);
+
+    alert("Student attendance submitted");
+}
+
 </script>
 
 {% endblock %}

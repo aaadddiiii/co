@@ -1,17 +1,18 @@
 from src.db.model import TeacherPayment, db
 from flask import request
-from src.utils import role_required
-from src.utils.request_utils import get_int, get_float, get_str
+from src.utils import role_required, get_int, get_float, get_str, error, success
+
+
 
 
 def routes(app):
 
     @app.route("/salary/admin")
-    @role_required("admin")
+    @role_required("admin", "treasurer")
     def admin_salary_view():
         data = TeacherPayment.query.order_by(TeacherPayment.year.desc()).all()
 
-        return {
+        return success(data={
             "salaries": [
                 {
                     "teacher_id": p.teacher_id,
@@ -20,7 +21,7 @@ def routes(app):
                     "status": p.status
                 } for p in data
             ]
-        }
+        })
     
     @app.route("/salary/approve", methods=["POST"])
     @role_required("admin")

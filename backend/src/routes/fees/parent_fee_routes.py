@@ -1,6 +1,6 @@
 from flask import session
 from src.db.model import User, Student, Fee
-from src.utils import role_required
+from src.utils import role_required, success, error
 
 
 def routes(app):
@@ -32,4 +32,4 @@ def routes(app):
                 ]
             })
 
-        return {"data": result}
+        return success(data={"data": result})

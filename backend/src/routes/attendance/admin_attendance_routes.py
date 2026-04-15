@@ -1,8 +1,7 @@
 from flask import request
 from datetime import date
 from src.db.model import db, User, StudentAttendance, TeacherAttendance
-from src.utils.request_utils import get_int, get_str
-from src.utils import role_required, success
+from src.utils import role_required, success, get_int, get_str, error
 
 
 def routes(app):
@@ -13,7 +12,7 @@ def routes(app):
     def view_all_student_attendance():
         records = StudentAttendance.query.all()
 
-        return {
+        return success(data={
             "attendance": [
                 {
                     "student_id": r.student_id,
@@ -23,7 +22,7 @@ def routes(app):
                     "status": r.status
                 } for r in records
             ]
-        }
+        })
 
 
     # -------- VIEW ALL TEACHER ATTENDANCE --------
@@ -32,7 +31,7 @@ def routes(app):
     def view_all_teacher_attendance():
         records = TeacherAttendance.query.all()
 
-        return {
+        return success( data={
             "attendance": [
                 {
                     "teacher_id": r.teacher_id,
@@ -41,7 +40,7 @@ def routes(app):
                     "status": r.status
                 } for r in records
             ]
-        }
+        })
 
 
     # -------- FILTER ATTENDANCE --------
@@ -77,14 +76,14 @@ def routes(app):
 
         data = q.all()
 
-        return {"data": [
+        return success(data={"data": [
             {
                 "id": r.id,
                 "date": str(r.date),
                 "period": r.period,
                 "status": r.status
             } for r in data
-        ]}
+        ]})
 
 
     # -------- UPDATE ATTENDANCE --------
@@ -156,6 +155,8 @@ def routes(app):
         period, err = get_int(data, "period")
         if err: return err
 
+        
+        today = date.today()
         exists = TeacherAttendance.query.filter_by(
             teacher_id=teacher_id,
             date=today,

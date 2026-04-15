@@ -2,7 +2,7 @@ from flask import request
 from sqlalchemy import func
 from datetime import datetime
 from src.db.model import AccountLog, db
-from src.utils import role_required
+from src.utils import role_required, error, success
 
 
 def routes(app):
@@ -13,7 +13,7 @@ def routes(app):
     def all_transactions():
         logs = AccountLog.query.order_by(AccountLog.date.desc()).all()
 
-        return {
+        return success(data={
             "data": [
                 {
                     "id": l.id,
@@ -23,7 +23,7 @@ def routes(app):
                     "date": str(l.date)
                 } for l in logs
             ]
-        }
+        })
 
 
     # -------- SUMMARY --------
@@ -36,11 +36,11 @@ def routes(app):
         debit = db.session.query(func.sum(AccountLog.amount))\
             .filter_by(type="debit").scalar() or 0
 
-        return {
+        return success(data={
             "total_income": credit,
             "total_expense": debit,
             "balance": credit - debit
-        }
+        })
 
 
     # -------- MONTHLY REPORT --------
@@ -69,13 +69,13 @@ def routes(app):
         credit = sum(l.amount for l in logs if l.type == "credit")
         debit = sum(l.amount for l in logs if l.type == "debit")
 
-        return {
+        return success(data={
             "month": month,
             "year": year,
             "income": credit,
             "expense": debit,
             "balance": credit - debit
-        }
+        })
 
 
     # -------- MANUAL ENTRY --------

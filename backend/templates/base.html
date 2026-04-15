@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>{{ title or "App" }}</title>
+
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="/static/js/api.js"></script>
+</head>
+
+<body>
+
+    <nav>
+        <div class="nav-inner">
+            {% if session.get("role") == "admin" %}
+            <a href="/admin/dashboard">Dashboard</a>
+            <a href="/admin/users">Users</a>
+            <a href="/admin/schedule">Schedule</a>
+            <a href="/admin/attendance">Attendance</a>
+            <a href="/admin/fees">Fees</a>
+            <a href="/admin/payments">Payments</a>
+            <a href="/admin/salary">Salary</a>
+            <a href="/admin/accounts">Accounts</a>
+            <a href="/admin/analytics">Analytics</a>
+
+            {% elif session.get("role") == "teacher" %}
+            <a href="/teacher/dashboard">Dashboard</a>
+            <a href="/teacher/schedule">Schedule</a>
+            <a href="/teacher/attendance">Mark Attendance</a>
+            <a href="/teacher/attendance-history">My Attendance</a>
+
+            {% elif session.get("role") == "student" %}
+            <a href="/student/dashboard">Dashboard</a>
+            <a href="/student/schedule">Schedule</a>
+            <a href="/student/attendance">Attendance</a>
+            <a href="/student/fees">Fees</a>
+
+            {% elif session.get("role") == "parent" %}
+            <a href="/parent/dashboard">Dashboard</a>
+            <a href="/parent/attendance">Attendance</a>
+            <a href="/parent/fees">Fees</a>
+
+            {% elif session.get("role") == "treasurer" %}
+            <a href="/treasurer/dashboard">Dashboard</a>
+            <a href="/treasurer/payments">Payments</a>
+            <a href="/treasurer/salary">Salary</a>
+            <a href="/treasurer/accounts">Accounts</a>
+            {% endif %}
+
+            <form action="/logout" method="POST" style="display:inline;">
+                <button>Logout</button>
+            </form>
+        </div>
+    </nav>
+
+    <hr>
+
+    <div class="container">
+        {% block content %}{% endblock %}
+    </div>
+
+</body>
+
+</html>

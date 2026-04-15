@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>Accounts</h1>
+
+<div id="summary"></div>
+
+<hr>
+
+<div id="list"></div>
+
+<script>
+
+async function load() {
+    const data = await API("/accounts/all");
+
+    const logs = data.data;
+
+    let credit = 0, debit = 0;
+
+    logs.forEach(l => {
+        if (l.type === "credit") credit += l.amount;
+        else debit += l.amount;
+    });
+
+    document.getElementById("summary").innerHTML = `
+        <p>Total Credit: ${credit}</p>
+        <p>Total Debit: ${debit}</p>
+        <p>Balance: ${credit - debit}</p>
+    `;
+
+    document.getElementById("list").innerHTML =
+        logs.map(l => `
+            <div>
+                ${l.type} | ${l.amount} | ${l.description || ""} | ${l.date}
+            </div>
+        `).join("");
+}
+
+load();
+
+</script>
+
+{% endblock %}

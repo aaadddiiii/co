@@ -1,6 +1,6 @@
 from flask import session
 from src.db.model import Schedule, Student
-from src.utils import role_required
+from src.utils import role_required, error, success
 
 def routes(app):
     @role_required("student")
@@ -14,7 +14,7 @@ def routes(app):
 
         data = Schedule.query.filter_by(class_id=student.class_id).all()
 
-        return {
+        return success(data={
             "schedule": [
                 {
                     "day": s.day,
@@ -23,4 +23,4 @@ def routes(app):
                     "teacher_id": s.teacher_id
                 } for s in data
             ]
-        }
+        })

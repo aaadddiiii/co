@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>Schedule</h1>
+
+<table border="1" cellpadding="8" cellspacing="0">
+    <thead>
+        <tr>
+            <th>Period</th>
+            <th>Mon</th><th>Tue</th><th>Wed</th>
+            <th>Thu</th><th>Fri</th><th>Sat</th><th>Sun</th>
+        </tr>
+    </thead>
+    <tbody id="table"></tbody>
+</table>
+
+<script>
+const days = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+
+(async () => {
+    const data = await API("/schedule/student");
+    const schedule = data.schedule;
+
+    if (!schedule.length) return;
+
+    const max = Math.max(...schedule.map(s => s.period));
+
+    const map = {};
+    schedule.forEach(s => {
+        map[s.period] ??= {};
+        map[s.period][s.day] = s.subject;
+    });
+
+    let html = "";
+
+    for (let p = 1; p <= max; p++) {
+        html += `<tr><td>P${p}</td>`;
+        days.forEach(d => {
+            html += `<td>${map[p]?.[d] || "-"}</td>`;
+        });
+        html += `</tr>`;
+    }
+
+    document.getElementById("table").innerHTML = html;
+})();
+</script>
+
+{% endblock %}

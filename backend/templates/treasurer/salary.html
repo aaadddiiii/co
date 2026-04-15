@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>Salary Payments</h1>
+
+<div id="list"></div>
+
+<script>
+
+async function load() {
+    const data = await API("/salary/admin");
+
+    document.getElementById("list").innerHTML =
+        data.salaries.map(s => `
+            <div style="border:1px solid #ccc; padding:10px; margin:5px;">
+                Teacher ${s.teacher_id} |
+                Month: ${s.month} |
+                Amount: ${s.amount} |
+                Status: ${s.status}
+
+                ${s.status === "approved"
+                    ? `<button onclick="pay(${s.id})">Pay</button>`
+                    : ""
+                }
+            </div>
+        `).join("");
+}
+
+async function pay(id) {
+    const form = new FormData();
+    form.append("salary_id", id);
+
+    await API("/salary/pay", "POST", form);
+
+    load();
+}
+
+load();
+
+</script>
+
+{% endblock %}

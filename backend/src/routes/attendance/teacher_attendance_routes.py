@@ -1,16 +1,64 @@
 from flask import request, session
 from datetime import date
-from src.utils.attendance_utils import is_valid_teaching_time
-from src.utils import role_required
-from src.utils.response import success
+from src.utils import role_required, success, is_valid_teaching_time, get_int, get_str, error
 from src.db.model import db, User, Teacher, StudentAttendance, TeacherAttendance, Schedule, Student
-from src.utils.request_utils import get_int, get_str
 
 
-TEST_MODE = True
+TEST_MODE = False
 
 def routes(app):
 
+
+    @role_required("teacher")
+    @app.route("/attendance/teacher/self", methods=["POST"])
+    def mark_self():
+
+        teacher = Teacher.query.filter_by(user_id=session["user_id"]).first()
+        if not teacher:
+            return error("Unauthorized", 401)
+
+        data = request.get_json()
+        if not data:
+            return error("Invalid JSON", 400)
+
+        class_id, err = get_int(data, "class_id")
+        if err: return err
+
+        period, err = get_int(data, "period")
+        if err: return err
+
+        status, err = get_str(data, "status")
+        if err: return err
+
+        today = date.today()
+
+        # optional: validate schedule
+        if not is_valid_teaching_time(teacher.id, class_id, period):
+            if not TEST_MODE:
+                return error("Not allowed", 403)
+
+        exists = TeacherAttendance.query.filter_by(
+            teacher_id=teacher.id,
+            date=today,
+            period=period
+        ).first()
+
+        if exists:
+            return error("Already marked", 400)
+
+        db.session.add(TeacherAttendance(
+            teacher_id=teacher.id,
+            date=today,
+            period=period,
+            status=status
+        ))
+
+        db.session.commit()
+
+        return success(message="Marked")
+
+
+        
     # -------- MARK ATTENDANCE --------
     @app.route("/attendance/teacher/mark", methods=["POST"])
     @role_required("teacher")
@@ -50,16 +98,14 @@ def routes(app):
             period=period
         ).first()
 
-        if exists:
-            return error("Already marked", 400)
-
-        # ✅ mark teacher attendance
-        db.session.add(TeacherAttendance(
-        teacher_id=teacher.id,
-        date=today,
-        period=period,
-        status="present"
-        ))
+        # only add if not exists (DON'T error)
+        if not exists:
+            db.session.add(TeacherAttendance(
+                teacher_id=teacher.id,
+                date=today,
+                period=period,
+                status="present"
+            ))
 
         # ✅ student attendance (optional)
         valid_students = Student.query.filter_by(class_id=class_id).all()
@@ -108,12 +154,12 @@ def routes(app):
             teacher_id=teacher.id
         ).all()
 
-        return {
+        return success(data={
             "attendance": [
                 {"date": str(r.date), "period": r.period, "status": r.status}
                 for r in data
             ]
-        }
+        })
 
 
 
@@ -135,7 +181,7 @@ def routes(app):
             StudentAttendance.class_id.in_(class_ids)
         ).all()
 
-        return {
+        return success(data={
             "attendance": [
                 {
                     "student_id": r.student_id,
@@ -145,7 +191,7 @@ def routes(app):
                     "status": r.status
                 } for r in data
             ]
-        }
+        })
 
 
     # -------- EDIT ATTENDANCE (LIMITED CONTROL) --------
@@ -190,3 +236,24 @@ def routes(app):
         db.session.commit()
 
         return success(message="Updated")
+
+
+    @role_required("teacher")
+    @app.route("/attendance/teacher/history")
+    def teacher_history():
+
+        teacher = Teacher.query.filter_by(user_id=session["user_id"]).first()
+
+        data = TeacherAttendance.query.filter_by(
+            teacher_id=teacher.id
+        ).order_by(TeacherAttendance.date.desc()).all()
+
+        return success(data={
+            "attendance": [
+                {
+                    "date": str(a.date),
+                    "period": a.period,
+                    "status": a.status
+                } for a in data
+            ]
+        })

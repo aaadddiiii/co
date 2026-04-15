@@ -1,24 +1,87 @@
-{% extends "layouts/admin_base.html" %}
-
-{% block title %}Dashboard{% endblock %}
-{% block page_title %}Dashboard{% endblock %}
+{% extends "base.html" %}
 
 {% block content %}
 
-<div id="summary"></div>
+<h1>Admin Dashboard</h1>
+
+<div style="display:flex; gap:20px; flex-wrap:wrap;">
+
+    <div class="card">
+        <h3>Users</h3>
+        <p id="users"></p>
+    </div>
+
+    <div class="card">
+        <h3>Fees</h3>
+        <p id="fees"></p>
+    </div>
+
+    <div class="card">
+        <h3>Payments</h3>
+        <p id="payments"></p>
+    </div>
+
+    <div class="card">
+        <h3>Attendance</h3>
+        <p id="attendance"></p>
+    </div>
+
+</div>
+
+<hr>
+
+<h3>Recent Payments</h3>
+<div id="recent"></div>
 
 <script>
-async function load() {
-  const data = await AccountAPI.getSummary();
 
-  document.getElementById("summary").innerHTML = `
-    <div>Total Income: ${data.total_income}</div>
-    <div>Total Expense: ${data.total_expense}</div>
-    <div>Balance: ${data.balance}</div>
-  `;
-}
+(async () => {
+    const users = await API("/users");
+    const fees = await API("/fees/all");
+    const payments = await API("/fees/payments");
+    const attendance = await API("/attendance/admin/students");
 
-load();
+    // USERS
+    const totalUsers = users.length;
+
+    document.getElementById("users").innerText =
+        `Total: ${totalUsers}`;
+
+    // FEES
+    const totalFees = fees.fees.length;
+    const dueFees = fees.fees.filter(f => f.status !== "paid").length;
+
+    document.getElementById("fees").innerText =
+        `${dueFees} pending / ${totalFees}`;
+
+    // PAYMENTS
+    const totalPayments = payments.payments.length;
+    const pendingPayments = payments.payments.filter(p => p.status === "pending").length;
+
+    document.getElementById("payments").innerText =
+        `${pendingPayments} pending / ${totalPayments}`;
+
+    // ATTENDANCE
+    const totalAttendance = attendance.attendance.length;
+    const present = attendance.attendance.filter(a => a.status === "present").length;
+
+    document.getElementById("attendance").innerText =
+        `${present}/${totalAttendance} present`;
+
+    // RECENT PAYMENTS
+    const recent = payments.payments.slice(-5).reverse();
+
+    document.getElementById("recent").innerHTML =
+        recent.map(p => `
+            <div class="card ${p.status === 'pending' ? 'pending' : ''}">
+                Student ${p.student_id} |
+                Amount: ${p.amount} |
+                Status: ${p.status}
+            </div>
+        `).join("") || "No recent payments";
+
+})();
+
 </script>
 
 {% endblock %}

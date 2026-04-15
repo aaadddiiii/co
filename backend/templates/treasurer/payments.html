@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>Payments</h1>
+
+<!-- FILTERS -->
+<input id="search" placeholder="Search by txn / student ID" />
+
+<select id="status">
+    <option value="">All</option>
+    <option value="pending">Pending</option>
+    <option value="verified">Verified</option>
+</select>
+
+<button onclick="apply()">Apply</button>
+
+<br><br>
+
+<div id="list"></div>
+
+<script>
+
+let all = [];
+
+// LOAD DATA ONCE
+(async () => {
+    const res = await API("/fees/payments");
+    all = res.payments;
+    render(all);
+})();
+
+// APPLY FILTER + SEARCH
+function apply() {
+    const status = document.getElementById("status").value.toLowerCase();
+    const search = document.getElementById("search").value.toLowerCase();
+
+    let data = all;
+
+    if (status) {
+        data = data.filter(p => p.status === status);
+    }
+
+    if (search) {
+        data = data.filter(p =>
+            String(p.student_id).includes(search) ||
+            (p.txn_id && p.txn_id.toLowerCase().includes(search))
+        );
+    }
+
+    render(data);
+}
+
+// RENDER
+function render(data) {
+    if (!data.length) {
+        document.getElementById("list").innerHTML = "No payments found";
+        return;
+    }
+
+    document.getElementById("list").innerHTML =
+        data.map(p => `
+            <div style="
+                border:1px solid ${p.status === 'pending' ? 'red' : '#ccc'};
+                background:${p.status === 'pending' ? '#ffe6e6' : 'white'};
+                padding:12px;
+                margin:8px;
+            ">
+                
+                <div><b>ID:</b> ${p.id}</div>
+                <div><b>Student:</b> ${p.student_id}</div>
+                <div><b>Amount:</b> ${p.amount}</div>
+                <div><b>Txn:</b> ${p.txn_id || '-'}</div>
+                <div><b>Status:</b> ${p.status}</div>
+
+                <br>
+
+                <a href="/treasurer/payment/${p.id}">
+                    View Details
+                </a>
+
+            </div>
+        `).join("");
+}
+
+</script>
+
+{% endblock %}
